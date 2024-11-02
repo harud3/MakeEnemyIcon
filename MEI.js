@@ -6,25 +6,16 @@ var croppedCanvas = document.createElement('canvas');
 var cropSizeInput = document.getElementById('cropSizeInput');
 var isTransmission = true;
 var finishCrop = false;
-
-var saveButton = document.getElementById('saveButton');
-function saveImage() {
-  var link = document.createElement('a');
-  link.href = croppedCanvas.toDataURL();
-  link.download = 'image.png';
-  link.click();
-}
-saveButton.onclick = saveImage;
+var img = document.createElement('img');
 
 fileInput.onchange = function(e) {
-  saveButton.disabled = true;
   var file = e.target.files[0];
   var reader = new FileReader();
 
   isTransmission = true;
   if(finishCrop){
     finishCrop = false;
-    croppedCanvas.parentNode.replaceChild(canvas, croppedCanvas);
+    img.parentNode.replaceChild(canvas, img);
   }
 
   reader.onload = function(e) {
@@ -105,11 +96,12 @@ canvas.onclick = function(e) {
     croppedCanvas.height = cropSize;
     var croppedCtx = croppedCanvas.getContext('2d');
     croppedCtx.putImageData(croppedImageData, 0, 0);
-    croppedCanvas.style.border = '3px solid black';
-    // Replace the original canvas with the cropped canvas
     canvas.parentNode.replaceChild(croppedCanvas, canvas);
 
-    saveButton.disabled = false;
+    var dataUrl = croppedCanvas.toDataURL('image/png');
+    img.src = dataUrl;
+    img.style.border = '3px solid black';
+    croppedCanvas.parentNode.replaceChild(img, croppedCanvas);
   }
 
 };
