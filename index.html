@@ -3,6 +3,19 @@
     <head>
     </head>
     <body>
+        <p>敵のアイコンが入っている、バトル前の画面の画像を読み込んでください</p>
+        <p>1度目の画像クリックで、クリック位置の色で透過します</p>
+        <p>
+            2度目の画像クリックで、クリック位置から左下に切り抜きます 右上の角をクリックしてください
+            <img id = "image1" src="01.png">
+        </p>
+        <p>画像を保存してください 再度ファイルを読み込めば、次の画像を加工できます</p>
+        <p>
+            色許容度(0~120):
+            <input type="number" id="toleranceInput" value="120"/>
+            切抜範囲(正方形 px):
+            <input type="number" id="cropSizeInput" value="132" />
+        </p>
         <input type="file" id="fileInput" />
         <canvas id="myCanvas"></canvas>
         <script src="MEI.js"></script>

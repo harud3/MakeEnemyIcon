@@ -1,10 +1,20 @@
 var fileInput = document.getElementById('fileInput');
 var canvas = document.getElementById('myCanvas');
 var ctx = canvas.getContext('2d');
-
+var toleranceInput = document.getElementById('toleranceInput');
+var croppedCanvas = document.createElement('canvas');
+var cropSizeInput = document.getElementById('cropSizeInput');
+var isTransmission = true;
+var finishCrop = false;
 fileInput.onchange = function(e) {
   var file = e.target.files[0];
   var reader = new FileReader();
+
+  isTransmission = true;
+  if(finishCrop){
+    finishCrop = false;
+    croppedCanvas.parentNode.replaceChild(canvas, croppedCanvas);
+  }
 
   reader.onload = function(e) {
     var img = new Image();
@@ -19,42 +29,75 @@ fileInput.onchange = function(e) {
   };
 
   reader.readAsDataURL(file);
+
+  fileInput.value = '';
 };
 
-function floodFill(ctx, x, y, targetColor, replacementColor) {
-  // Get the color of the pixel at (x, y)
-  var imageData = ctx.getImageData(x, y, 1, 1);
-  var pixelColor = imageData.data;
+function floodFill(ctx, startX, startY, targetColor, replacementColor, tolerance) {
+  var stack = [[startX, startY]];
+  var width = ctx.canvas.width;
+  var height = ctx.canvas.height;
+  var imageData = ctx.getImageData(0, 0, width, height);
+  var data = imageData.data;
 
-  // If the pixel's color is not the target color, return
-  if (!colorsMatch(pixelColor, targetColor)) {
-    return;
+  while (stack.length) {
+    var position = stack.pop();
+    var x = position[0];
+    var y = position[1];
+
+    var index = (y * width + x) * 4;
+
+    if (colorsAreClose([data[index], data[index + 1], data[index + 2], data[index + 3]], targetColor, tolerance)) {
+      data[index] = replacementColor[0];
+      data[index + 1] = replacementColor[1];
+      data[index + 2] = replacementColor[2];
+      data[index + 3] = replacementColor[3];
+
+      if (x > 0) stack.push([x - 1, y]);
+      if (x < width - 1) stack.push([x + 1, y]);
+      if (y > 0) stack.push([x, y - 1]);
+      if (y < height - 1) stack.push([x, y + 1]);
+    }
   }
 
-  // Set the color of the pixel to the replacement color
-  imageData.data[0] = replacementColor[0];
-  imageData.data[1] = replacementColor[1];
-  imageData.data[2] = replacementColor[2];
-  imageData.data[3] = replacementColor[3];
-  ctx.putImageData(imageData, x, y);
-
-  // Recursively call floodFill on the neighboring pixels
-  floodFill(ctx, x + 1, y, targetColor, replacementColor);
-  floodFill(ctx, x - 1, y, targetColor, replacementColor);
-  floodFill(ctx, x, y + 1, targetColor, replacementColor);
-  floodFill(ctx, x, y - 1, targetColor, replacementColor);
+  ctx.putImageData(imageData, 0, 0);
 }
 
-function colorsMatch(a, b) {
-  return a[0] === b[0] && a[1] === b[1] && a[2] === b[2] && a[3] === b[3];
+function colorsAreClose(a, b, tolerance) {
+  return Math.abs(a[0] - b[0]) <= tolerance && Math.abs(a[1] - b[1]) <= tolerance && Math.abs(a[2] - b[2]) <= tolerance;
 }
 
 canvas.onclick = function(e) {
   var x = e.offsetX;
   var y = e.offsetY;
-  var imageData = ctx.getImageData(x, y, 1, 1);
+
+
+  if(isTransmission){
+    isTransmission = false;
+    var imageData = ctx.getImageData(x, y, 1, 1);
   var clickedColor = imageData.data;
 
   var transparentColor = [0, 0, 0, 0];
-  floodFill(ctx, x, y, clickedColor, transparentColor);
+  var tolerance = parseInt(toleranceInput.value);
+  floodFill(ctx, x, y, clickedColor, transparentColor, tolerance);
+  }
+  else{
+    finishCrop = true;
+    var cropSize = parseInt(cropSizeInput.value);
+    var croppedImageData = ctx.getImageData(x - (cropSize * 0.93), y - (cropSize * 0.1), cropSize, cropSize);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.putImageData(croppedImageData, 0, 0);
+
+    // Create a new canvas and draw the cropped image on it
+    croppedCanvas = document.createElement('canvas');
+    croppedCanvas.width = cropSize;
+    croppedCanvas.height = cropSize;
+    var croppedCtx = croppedCanvas.getContext('2d');
+    croppedCtx.putImageData(croppedImageData, 0, 0);
+    croppedCanvas.style.border = '3px solid black';
+    // Replace the original canvas with the cropped canvas
+    canvas.parentNode.replaceChild(croppedCanvas, canvas);
+  }
+
+  
 };
