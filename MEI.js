@@ -6,7 +6,18 @@ var croppedCanvas = document.createElement('canvas');
 var cropSizeInput = document.getElementById('cropSizeInput');
 var isTransmission = true;
 var finishCrop = false;
+
+var saveButton = document.getElementById('saveButton');
+function saveImage() {
+  var link = document.createElement('a');
+  link.href = croppedCanvas.toDataURL();
+  link.download = 'image.png';
+  link.click();
+}
+saveButton.onclick = saveImage;
+
 fileInput.onchange = function(e) {
+  saveButton.disabled = true;
   var file = e.target.files[0];
   var reader = new FileReader();
 
@@ -97,7 +108,8 @@ canvas.onclick = function(e) {
     croppedCanvas.style.border = '3px solid black';
     // Replace the original canvas with the cropped canvas
     canvas.parentNode.replaceChild(croppedCanvas, canvas);
+
+    saveButton.disabled = false;
   }
 
-  
 };
